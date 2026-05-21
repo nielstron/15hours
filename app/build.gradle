@@ -4,7 +4,14 @@ plugins {
 
 def localProperties = new Properties()
 def localPropertiesFile = rootProject.file("local.properties")
-localPropertiesFile.withInputStream { localProperties.load(it) }
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withInputStream { localProperties.load(it) }
+}
+
+def hasReleaseSigning = localProperties["release.storeFile"] != null
+        && localProperties["release.storePassword"] != null
+        && localProperties["release.keyAlias"] != null
+        && localProperties["release.keyPassword"] != null
 
 android {
     namespace "de.nielstron.fifteenhours"
@@ -20,16 +27,20 @@ android {
 
     signingConfigs {
         release {
-            storeFile rootProject.file(localProperties["release.storeFile"])
-            storePassword localProperties["release.storePassword"]
-            keyAlias localProperties["release.keyAlias"]
-            keyPassword localProperties["release.keyPassword"]
+            if (hasReleaseSigning) {
+                storeFile rootProject.file(localProperties["release.storeFile"])
+                storePassword localProperties["release.storePassword"]
+                keyAlias localProperties["release.keyAlias"]
+                keyPassword localProperties["release.keyPassword"]
+            }
         }
     }
 
     buildTypes {
         release {
-            signingConfig signingConfigs.release
+            if (hasReleaseSigning) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 }
