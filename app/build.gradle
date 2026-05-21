@@ -1,0 +1,35 @@
+plugins {
+    id "com.android.application"
+}
+
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file("local.properties")
+localPropertiesFile.withInputStream { localProperties.load(it) }
+
+android {
+    namespace "de.nielstron.fifteenhours"
+    compileSdk 36
+
+    defaultConfig {
+        applicationId "de.nielstron.fifteenhours"
+        minSdk 26
+        targetSdk 36
+        versionCode 1
+        versionName "1.0"
+    }
+
+    signingConfigs {
+        release {
+            storeFile rootProject.file(localProperties["release.storeFile"])
+            storePassword localProperties["release.storePassword"]
+            keyAlias localProperties["release.keyAlias"]
+            keyPassword localProperties["release.keyPassword"]
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+        }
+    }
+}

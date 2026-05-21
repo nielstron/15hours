@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>15 Hours Logo Playground</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #145c54;
+      --paper: #f7f4ee;
+      --line: #d7d2c8;
+      --text: #26231f;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #efebe3;
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: minmax(320px, 420px) minmax(360px, 1fr);
+      min-height: 100vh;
+    }
+
+    aside {
+      background: #fbf9f4;
+      border-right: 1px solid var(--line);
+      padding: 22px;
+      overflow-y: auto;
+    }
+
+    h1 {
+      margin: 0 0 18px;
+      font-size: 20px;
+      font-weight: 650;
+      letter-spacing: 0;
+    }
+
+    .controls {
+      display: grid;
+      gap: 14px;
+    }
+
+    label {
+      display: grid;
+      gap: 7px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 58px;
+      align-items: center;
+      gap: 10px;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--ink);
+    }
+
+    input[type="number"],
+    input[type="color"] {
+      width: 58px;
+      height: 32px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: white;
+      color: var(--text);
+      font: inherit;
+      padding: 0 7px;
+    }
+
+    input[type="color"] {
+      padding: 2px;
+    }
+
+    .swatches {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      padding-top: 8px;
+    }
+
+    button {
+      border: 1px solid var(--ink);
+      border-radius: 7px;
+      background: var(--ink);
+      color: white;
+      min-height: 38px;
+      font: inherit;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    button.secondary {
+      background: white;
+      color: var(--ink);
+    }
+
+    .preview {
+      display: grid;
+      place-items: center;
+      padding: 28px;
+    }
+
+    .stage {
+      display: grid;
+      grid-template-columns: minmax(280px, 512px) 120px;
+      align-items: center;
+      gap: 30px;
+    }
+
+    .icon-frame {
+      width: min(512px, 70vw);
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+      background: #ded8cd;
+      border-radius: 30px;
+      overflow: hidden;
+      box-shadow: 0 18px 45px rgba(38, 35, 31, 0.16);
+    }
+
+    svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .small {
+      display: grid;
+      gap: 12px;
+      justify-items: center;
+      font-size: 12px;
+      color: #6d685f;
+    }
+
+    .small .box {
+      width: 96px;
+      height: 96px;
+      border-radius: 22px;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(38, 35, 31, 0.14);
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 150px;
+      margin-top: 16px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 10px;
+      resize: vertical;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      color: #342f29;
+      background: white;
+    }
+
+    @media (max-width: 860px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+
+      aside {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .stage {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <aside>
+      <h1>Logo Playground</h1>
+      <div class="controls" id="controls"></div>
+      <div class="swatches">
+        <label>
+          Ink
+          <input id="ink" type="color" value="#145c54">
+        </label>
+        <label>
+          Background
+          <input id="paper" type="color" value="#f7f4ee">
+        </label>
+      </div>
+      <div class="buttons">
+        <button id="downloadSvg">SVG</button>
+        <button id="downloadPng" class="secondary">PNG</button>
+      </div>
+      <textarea id="svgText" spellcheck="false"></textarea>
+    </aside>
+    <section class="preview">
+      <div class="stage">
+        <div class="icon-frame" id="largePreview"></div>
+        <div class="small">
+          <div class="box" id="smallPreview"></div>
+          <span>96 px</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const state = {
+      iconRadius: 112,
+      circleRadius: 23,
+      circleGapX: 60,
+      circleGapY: 68,
+      circleTop: 120,
+      circleCenterX: 256,
+      bedY: 342,
+      bedWidth: 296,
+      bedStroke: 26,
+      legHeight: 60,
+      legStroke: 18,
+      ink: "#145c54",
+      paper: "#f7f4ee",
+    };
+
+    const sliders = [
+      ["circleRadius", "Circle size", 8, 36],
+      ["circleGapX", "Circle X spacing", 32, 84],
+      ["circleGapY", "Circle Y spacing", 36, 92],
+      ["circleTop", "Circle top", 70, 190],
+      ["circleCenterX", "Circle center", 190, 322],
+      ["bedY", "Bed Y", 280, 410],
+      ["bedWidth", "Bed width", 180, 360],
+      ["bedStroke", "Bed line", 8, 34],
+      ["legHeight", "Leg height", 0, 90],
+      ["legStroke", "Leg line", 4, 28],
+      ["iconRadius", "Corner radius", 0, 160],
+    ];
+
+    const controls = document.getElementById("controls");
+    const largePreview = document.getElementById("largePreview");
+    const smallPreview = document.getElementById("smallPreview");
+    const svgText = document.getElementById("svgText");
+
+    for (const [key, label, min, max] of sliders) {
+      const wrapper = document.createElement("label");
+      wrapper.textContent = label;
+      const row = document.createElement("div");
+      row.className = "row";
+      const range = document.createElement("input");
+      range.type = "range";
+      range.min = min;
+      range.max = max;
+      range.value = state[key];
+      const number = document.createElement("input");
+      number.type = "number";
+      number.min = min;
+      number.max = max;
+      number.value = state[key];
+      const sync = (value) => {
+        state[key] = Number(value);
+        range.value = state[key];
+        number.value = state[key];
+        render();
+      };
+      range.addEventListener("input", () => sync(range.value));
+      number.addEventListener("input", () => sync(number.value));
+      row.append(range, number);
+      wrapper.append(row);
+      controls.append(wrapper);
+    }
+
+    document.getElementById("ink").addEventListener("input", (event) => {
+      state.ink = event.target.value;
+      render();
+    });
+
+    document.getElementById("paper").addEventListener("input", (event) => {
+      state.paper = event.target.value;
+      render();
+    });
+
+    function circleMarkup() {
+      const startX = state.circleCenterX - state.circleGapX * 2;
+      return Array.from({ length: 15 }, (_, index) => {
+        const col = index % 5;
+        const row = Math.floor(index / 5);
+        const cx = startX + col * state.circleGapX;
+        const cy = state.circleTop + row * state.circleGapY;
+        return `    <circle cx="${cx}" cy="${cy}" r="${state.circleRadius}"/>`;
+      }).join("\n");
+    }
+
+    function svg() {
+      const left = 256 - state.bedWidth / 2;
+      const right = 256 + state.bedWidth / 2;
+      const legTop = state.bedY - state.legHeight / 2;
+      const legBottom = state.bedY + state.legHeight / 2;
+      return `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="${state.iconRadius}" fill="${state.paper}"/>
+  <g fill="${state.ink}">
+${circleMarkup()}
+  </g>
+  <g fill="none" stroke="${state.ink}" stroke-linecap="round" stroke-linejoin="round">
+    <path stroke-width="${state.bedStroke}" d="M${left} ${state.bedY}h${state.bedWidth}"/>
+    <path stroke-width="${state.legStroke}" d="M${left} ${legTop}v${state.legHeight}M${right} ${legTop}v${state.legHeight}"/>
+  </g>
+</svg>`;
+    }
+
+    function render() {
+      const markup = svg();
+      largePreview.innerHTML = markup;
+      smallPreview.innerHTML = markup;
+      svgText.value = markup;
+    }
+
+    function download(name, blob) {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = name;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    document.getElementById("downloadSvg").addEventListener("click", () => {
+      download("15hours-logo.svg", new Blob([svg()], { type: "image/svg+xml" }));
+    });
+
+    document.getElementById("downloadPng").addEventListener("click", () => {
+      const image = new Image();
+      const url = URL.createObjectURL(new Blob([svg()], { type: "image/svg+xml" }));
+      image.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = 512;
+        canvas.height = 512;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(image, 0, 0);
+        URL.revokeObjectURL(url);
+        canvas.toBlob((blob) => download("15hours-logo.png", blob), "image/png");
+      };
+      image.src = url;
+    });
+
+    render();
+  </script>
+</body>
+</html>
