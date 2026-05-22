@@ -33,6 +33,10 @@ final class TimerState {
         return prefs(context).getLong(ENDS_AT, 0L);
     }
 
+    static long startedAt(Context context) {
+        return prefs(context).getLong(STARTED_AT, 0L);
+    }
+
     static boolean active(Context context) {
         return endsAt(context) != 0L;
     }

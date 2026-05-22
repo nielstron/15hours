@@ -10,7 +10,11 @@ import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Path;
+import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.GradientDrawable;
@@ -190,8 +194,9 @@ public final class MainActivity extends Activity {
     }
 
     private void goingToSleep() {
-        boolean inTime = TimerState.inTime(this, System.currentTimeMillis());
-        SleepHistory.record(this, inTime);
+        long now = System.currentTimeMillis();
+        boolean inTime = TimerState.inTime(this, now);
+        SleepHistory.record(this, now - TimerState.startedAt(this));
         TimerState.clear(this);
         Scheduler.cancelAll(this);
         AlarmState.dismiss(this);
@@ -231,7 +236,7 @@ public final class MainActivity extends Activity {
 
     private void renderHistoryGrid() {
         historyGrid.removeAllViews();
-        Boolean[] days = SleepHistory.last15(this);
+        SleepHistory.Entry[] entries = SleepHistory.last15(this, System.currentTimeMillis());
         for (int rowIndex = 0; rowIndex < 3; rowIndex++) {
             LinearLayout row = new LinearLayout(this);
             row.setGravity(Gravity.CENTER);
@@ -244,9 +249,9 @@ public final class MainActivity extends Activity {
 
             for (int columnIndex = 0; columnIndex < 5; columnIndex++) {
                 int index = rowIndex * 5 + columnIndex;
-                View circle = new View(this);
-                circle.setContentDescription(historyDescription(days[index], index));
-                circle.setBackground(historyCircle(days[index]));
+                SleepHistory.Entry entry = entries[index];
+                View circle = new HistoryCircleView(this, entry);
+                circle.setContentDescription(historyDescription(entry));
                 LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dp(24), dp(24));
                 params.setMargins(dp(7), 0, dp(7), 0);
                 row.addView(circle, params);
@@ -254,27 +259,52 @@ public final class MainActivity extends Activity {
         }
     }
 
-    private GradientDrawable historyCircle(Boolean value) {
-        GradientDrawable drawable = new GradientDrawable();
-        drawable.setShape(GradientDrawable.OVAL);
-        if (value == null) {
-            drawable.setColor(Color.TRANSPARENT);
-            drawable.setStroke(dp(2), Color.rgb(150, 147, 140));
-        } else if (value) {
-            drawable.setColor(Color.rgb(20, 92, 84));
-        } else {
-            drawable.setColor(Color.rgb(157, 48, 48));
+    private String historyDescription(SleepHistory.Entry entry) {
+        if (entry == null) {
+            return "No sleep record";
         }
-        return drawable;
+        return String.format(
+                Locale.US,
+                "%.1fh %s %s",
+                entry.hours(),
+                entry.inTime() ? "in time" : "missed",
+                SleepHistory.dateDescription(entry.date));
     }
 
-    private String historyDescription(Boolean value, int index) {
-        int daysAgo = 14 - index;
-        String day = daysAgo == 0 ? "today" : daysAgo + " days ago";
-        if (value == null) {
-            return "No sleep record " + day;
+    private final class HistoryCircleView extends View {
+        private final SleepHistory.Entry entry;
+        private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+
+        HistoryCircleView(Context context, SleepHistory.Entry entry) {
+            super(context);
+            this.entry = entry;
         }
-        return (value ? "In time " : "Missed ") + day;
+
+        @Override
+        protected void onDraw(Canvas canvas) {
+            super.onDraw(canvas);
+            RectF bounds = new RectF(dp(2), dp(2), getWidth() - dp(2), getHeight() - dp(2));
+            if (entry != null) {
+                Path circle = new Path();
+                circle.addOval(bounds, Path.Direction.CW);
+                int save = canvas.save();
+                canvas.clipPath(circle);
+                paint.setStyle(Paint.Style.FILL);
+                paint.setColor(entry.inTime() ? Color.rgb(20, 92, 84) : Color.rgb(157, 48, 48));
+                float top = bounds.bottom - bounds.height() * entry.fill();
+                canvas.drawRect(bounds.left, top, bounds.right, bounds.bottom, paint);
+                canvas.restoreToCount(save);
+            }
+
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(dp(2));
+            if (entry == null) {
+                paint.setColor(Color.rgb(150, 147, 140));
+            } else {
+                paint.setColor(entry.inTime() ? Color.rgb(20, 92, 84) : Color.rgb(157, 48, 48));
+            }
+            canvas.drawOval(bounds, paint);
+        }
     }
 
     private void showOutcome(String emoji, String message) {
