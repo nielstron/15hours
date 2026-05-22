@@ -24,6 +24,8 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.Window;
 import android.widget.Button;
+import android.widget.FrameLayout;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -38,6 +40,7 @@ public final class MainActivity extends Activity {
     private LinearLayout historyGrid;
     private Button primary;
     private TextView pickWakeTime;
+    private ImageButton settings;
 
     private final Runnable tick = new Runnable() {
         @Override
@@ -84,11 +87,30 @@ public final class MainActivity extends Activity {
     }
 
     private View makeView() {
-        LinearLayout root = new LinearLayout(this);
-        root.setOrientation(LinearLayout.VERTICAL);
-        root.setGravity(Gravity.CENTER);
-        root.setPadding(dp(24), dp(32), dp(24), dp(32));
+        FrameLayout root = new FrameLayout(this);
         root.setBackgroundColor(Color.rgb(247, 244, 238));
+
+        LinearLayout content = new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setGravity(Gravity.CENTER);
+        content.setPadding(dp(24), dp(32), dp(24), dp(32));
+        root.addView(content, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT));
+
+        settings = new ImageButton(this);
+        settings.setImageResource(R.drawable.ic_settings);
+        settings.setBackgroundColor(Color.TRANSPARENT);
+        settings.setScaleType(ImageButton.ScaleType.CENTER);
+        settings.setPadding(dp(14), dp(14), dp(14), dp(14));
+        settings.setContentDescription("Settings");
+        settings.setOnClickListener(v -> startActivity(new Intent(this, SettingsActivity.class)));
+        FrameLayout.LayoutParams settingsParams = new FrameLayout.LayoutParams(
+                dp(56),
+                dp(56),
+                Gravity.TOP | Gravity.RIGHT);
+        settingsParams.setMargins(0, dp(18), dp(14), 0);
+        root.addView(settings, settingsParams);
 
         countdown = new TextView(this);
         countdown.setTextColor(Color.rgb(20, 92, 84));
@@ -100,7 +122,7 @@ public final class MainActivity extends Activity {
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT);
         countdownParams.setMargins(0, dp(22), 0, dp(28));
-        root.addView(countdown, countdownParams);
+        content.addView(countdown, countdownParams);
 
         primary = new Button(this);
         primary.setText("I woke up");
@@ -114,7 +136,7 @@ public final class MainActivity extends Activity {
                 startCountdown();
             }
         });
-        root.addView(primary, new LinearLayout.LayoutParams(
+        content.addView(primary, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT));
 
@@ -130,7 +152,7 @@ public final class MainActivity extends Activity {
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT);
         pickParams.setMargins(0, dp(8), 0, 0);
-        root.addView(pickWakeTime, pickParams);
+        content.addView(pickWakeTime, pickParams);
 
         historyGrid = new LinearLayout(this);
         historyGrid.setGravity(Gravity.CENTER);
@@ -139,7 +161,7 @@ public final class MainActivity extends Activity {
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT);
         gridParams.setMargins(0, dp(26), 0, 0);
-        root.addView(historyGrid, gridParams);
+        content.addView(historyGrid, gridParams);
 
         render();
         return root;
@@ -172,8 +194,7 @@ public final class MainActivity extends Activity {
         SleepHistory.record(this, inTime);
         TimerState.clear(this);
         Scheduler.cancelAll(this);
-        AlarmSoundService.stop(this);
-        AppNotifications.showCountdown(this);
+        AlarmState.dismiss(this);
         render();
         showOutcome(inTime ? "🎉" : "😴", inTime ? "congrats!" : "try again tomorrow!");
     }

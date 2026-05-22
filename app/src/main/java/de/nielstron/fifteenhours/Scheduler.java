@@ -27,7 +27,9 @@ final class Scheduler {
         if (showCountdownAt > System.currentTimeMillis()) {
             schedule(context, REQUEST_SHOW_COUNTDOWN, showCountdownAt, ActionReceiver.ACTION_SHOW_COUNTDOWN, 0L);
         }
-        schedule(context, REQUEST_ALARM, endsAtMs, ActionReceiver.ACTION_ALARM, 0L);
+        if (AlarmSettings.bedtimeAlarmEnabled(context)) {
+            schedule(context, REQUEST_ALARM, endsAtMs, ActionReceiver.ACTION_ALARM, 0L);
+        }
         for (int i = 0; i < REMIND_BEFORE_MS.length; i++) {
             long remindAt = failureAtMs - REMIND_BEFORE_MS[i];
             if (remindAt > System.currentTimeMillis()) {
@@ -36,8 +38,12 @@ final class Scheduler {
         }
     }
 
-    static void cancelAll(Context context) {
+    static void cancelAlarm(Context context) {
         cancel(context, REQUEST_ALARM, ActionReceiver.ACTION_ALARM);
+    }
+
+    static void cancelAll(Context context) {
+        cancelAlarm(context);
         cancel(context, REQUEST_SHOW_COUNTDOWN, ActionReceiver.ACTION_SHOW_COUNTDOWN);
         for (int i = 0; i < REMIND_BEFORE_MS.length; i++) {
             cancel(context, REQUEST_REMINDER_BASE + i, ReminderReceiver.ACTION_REMIND);

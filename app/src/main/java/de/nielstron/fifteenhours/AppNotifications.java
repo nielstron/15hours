@@ -17,7 +17,7 @@ final class AppNotifications {
     static final int ALARM_ID = 17;
     static final String COUNTDOWN_CHANNEL = "countdown";
     static final String REMINDER_CHANNEL = "reminders";
-    static final String ALARM_CHANNEL = "alarm";
+    static final String ALARM_CHANNEL = "alarm_notification";
 
     private AppNotifications() {}
 
@@ -76,12 +76,18 @@ final class AppNotifications {
                         .setAction(MainActivity.ACTION_START_FROM_NOTIFICATION)
                         .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP),
                 PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent stopAlarm = PendingIntent.getBroadcast(
+                context,
+                4,
+                new Intent(context, ActionReceiver.class).setAction(ActionReceiver.ACTION_STOP_ALARM),
+                PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
 
         boolean active = endsAtMs != 0L;
+        boolean alarmRinging = AlarmState.ringing(context);
         Notification.Builder builder = new Notification.Builder(context)
                 .setSmallIcon(R.drawable.ic_notification)
                 .setContentTitle("15 Hours")
-                .setContentIntent(active ? openApp : startAndOpen)
+                .setContentIntent(alarmRinging ? stopAlarm : (active ? openApp : startAndOpen))
                 .setOngoing(true)
                 .setShowWhen(true)
                 .setOnlyAlertOnce(true)
@@ -96,6 +102,12 @@ final class AppNotifications {
                     .setWhen(endsAtMs)
                     .setUsesChronometer(true)
                     .setChronometerCountDown(true);
+            if (alarmRinging) {
+                builder.addAction(new Notification.Action.Builder(
+                        R.drawable.ic_notification,
+                        "Dismiss",
+                        stopAlarm).build());
+            }
         } else {
             builder.setContentText("Tap when you wake up")
                     .addAction(new Notification.Action.Builder(
@@ -138,6 +150,8 @@ final class AppNotifications {
                 .setContentText("40 minutes to go to sleep")
                 .setContentIntent(stop)
                 .setOngoing(true)
+                .setCategory(Notification.CATEGORY_ALARM)
+                .setDefaults(Notification.DEFAULT_SOUND | Notification.DEFAULT_VIBRATE)
                 .setPriority(Notification.PRIORITY_HIGH)
                 .addAction(new Notification.Action.Builder(
                         R.drawable.ic_notification,

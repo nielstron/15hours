@@ -1,6 +1,5 @@
 package de.nielstron.fifteenhours;
 
-import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -23,16 +22,17 @@ public final class ActionReceiver extends BroadcastReceiver {
         } else if (ACTION_SHOW_COUNTDOWN.equals(action)) {
             AppNotifications.showCountdown(context);
         } else if (ACTION_ALARM.equals(action)) {
+            if (!AlarmSettings.bedtimeAlarmEnabled(context)) {
+                AppNotifications.showCountdown(context);
+                return;
+            }
             if (AppVisibility.foreground(context)) {
                 AppNotifications.showCountdown(context);
                 return;
             }
-            AppNotifications.showCountdown(context);
-            AlarmSoundService.start(context);
+            AlarmState.ring(context);
         } else if (ACTION_STOP_ALARM.equals(action)) {
-            AlarmSoundService.stop(context);
-            NotificationManager manager = context.getSystemService(NotificationManager.class);
-            manager.cancel(AppNotifications.ALARM_ID);
+            AlarmState.dismiss(context);
         }
     }
 }
